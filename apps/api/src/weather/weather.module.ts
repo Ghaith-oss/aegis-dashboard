@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AlertsModule } from '../alerts/alerts.module';
 
 @Module({
-  imports: [RealtimeModule],
+  imports: [RealtimeModule, AlertsModule],
   providers: [WeatherService]
 })
 export class WeatherModule {}
