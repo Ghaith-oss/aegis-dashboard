@@ -1,0 +1,58 @@
+// apps/api/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Zone {
+  id        String   @id @default(uuid())
+  name      String   // e.g., "Front Door", "Living Room"
+  isArmed   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  devices   Device[]
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // e.g., "CAMERA", "MOTION_SENSOR", "DOOR_CONTACT"
+  status    String   @default("ONLINE") // "ONLINE", "OFFLINE"
+  zoneId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zone      Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  events    SensorEvent[]
+}
+
+model SensorEvent {
+  id        String   @id @default(uuid())
+  deviceId  String
+  payload   String   // Storing as a stringified JSON object for flexibility
+  createdAt DateTime @default(now())
+
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+}
+
+model ThreatAssessment {
+  id        String   @id @default(uuid())
+  score     Int      // 0 to 100
+  level     String   // "SAFE", "ELEVATED", "CRITICAL"
+  narrative String?  // Optional LLM-generated description
+  createdAt DateTime @default(now())
+}
+
+model Alert {
+  id           String   @id @default(uuid())
+  severity     String   // "WARNING", "CRITICAL"
+  message      String
+  acknowledged Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
