@@ -32,6 +32,12 @@ jobs:
         run: |
           cd apps/api
           npx prisma generate
+          
+      - name: Generate Database Client and Run Tests
+        run: |
+          cd apps/api
+          npx prisma generate
+          npm run test
 
       # 5. Run the Linter to check for code quality/formatting issues
       - name: Run Backend Linter
