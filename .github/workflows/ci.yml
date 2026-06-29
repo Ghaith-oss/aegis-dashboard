@@ -1,6 +1,5 @@
 name: Aegis CI Pipeline
 
-# This tells GitHub to run this pipeline every time you push to the main branch
 on:
   push:
     branches: [ "main" ]
@@ -13,39 +12,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Grab your code from the repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Set up the environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3. Install packages for the whole monorepo
       - name: Install Dependencies
         run: npm install
 
-      # 4. Generate the Prisma Client (required before testing)
       - name: Generate Prisma Client
         run: |
           cd apps/api
           npx prisma generate
-          
-      - name: Generate Database Client and Run Tests
-        run: |
-          cd apps/api
-          npx prisma generate
-          npm run test
 
-      # 5. Run the Linter to check for code quality/formatting issues
       - name: Run Backend Linter
         run: |
           cd apps/api
           npm run lint
 
-      # 6. Run the Unit Tests we just wrote!
       - name: Run Backend Unit Tests
         run: |
           cd apps/api
