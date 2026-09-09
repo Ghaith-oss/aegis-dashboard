@@ -1,6 +1,7 @@
-import { Controller, Sse, Post, Body } from '@nestjs/common';
+import { Controller, Sse, Post, Body, UseGuards } from '@nestjs/common';
 import { RealtimeService } from './realtime.service';
 import { SimulateEventDto } from './dto/simulate-event.dto'; // <-- Import the DTO
+import { DeviceIngestGuard } from '../auth/device-ingest.guard';
 
 @Controller('api/realtime')
 export class RealtimeController {
@@ -12,11 +13,10 @@ export class RealtimeController {
   }
 
   @Post('simulate')
+  @UseGuards(DeviceIngestGuard) // <-- This single line activates the security perimeter
   simulateEvent(@Body() payload: SimulateEventDto) {
-    // <-- Apply it to the Body
-    // Because of the Global Pipe, if the code reaches this line,
-    // we are 100% guaranteed that 'payload' is perfectly safe and formatted.
+    // If the code reaches here, the token is 100% valid and the payload matches the DTO
     this.realtimeService.emit('DEVICE_TRIGGERED', payload);
-    return { success: true, message: 'Event broadcasted' };
+    return { status: 'success', message: 'Event ingested safely' };
   }
 }

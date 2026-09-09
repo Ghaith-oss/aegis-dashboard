@@ -23,6 +23,9 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Security Audit (OWASP A03)
+        run: npm audit --audit-level=high
+        
       - name: Generate Prisma Client
         run: |
           cd apps/api
@@ -37,3 +40,8 @@ jobs:
         run: |
           cd apps/api
           npm run test
+
+
+      - name: test controller
+        run: |
+          Invoke-RestMethod -Uri http://localhost:3000/api/realtime/simulate -Method Post -Body '{"sensor": "Front Door", "status": "OPEN"}' -ContentType "application/json"
