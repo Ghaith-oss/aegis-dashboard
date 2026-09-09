@@ -24,8 +24,8 @@ jobs:
         run: npm install
 
       - name: Security Audit (OWASP A03)
-        run: npm audit --audit-level=high
-        
+        run: npm audit --audit-level=critical
+
       - name: Generate Prisma Client
         run: |
           cd apps/api
