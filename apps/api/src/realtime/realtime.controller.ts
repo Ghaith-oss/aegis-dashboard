@@ -1,11 +1,15 @@
-import { Controller, Sse, Post, Body, UseGuards } from '@nestjs/common';
-import { RealtimeService } from './realtime.service';
-import { SimulateEventDto } from './dto/simulate-event.dto'; // <-- Import the DTO
+import { Controller, Post, Body, UseGuards, Sse } from '@nestjs/common';
+import { SimulateEventDto } from './dto/simulate-event.dto';
 import { DeviceIngestGuard } from '../auth/device-ingest.guard';
+import { AlertsService } from '../alerts/alerts.service';
+import { RealtimeService } from './realtime.service';
 
 @Controller('api/realtime')
 export class RealtimeController {
-  constructor(private readonly realtimeService: RealtimeService) {}
+  constructor(
+    private readonly alertsService: AlertsService,
+    private readonly realtimeService: RealtimeService
+  ) {}
 
   @Sse('stream')
   streamEvents() {
@@ -13,10 +17,10 @@ export class RealtimeController {
   }
 
   @Post('simulate')
-  @UseGuards(DeviceIngestGuard) // <-- This single line activates the security perimeter
+  @UseGuards(DeviceIngestGuard)
   simulateEvent(@Body() payload: SimulateEventDto) {
-    // If the code reaches here, the token is 100% valid and the payload matches the DTO
-    this.realtimeService.emit('DEVICE_TRIGGERED', payload);
-    return { status: 'success', message: 'Event ingested safely' };
+    // We now route it through the central hub to persist to SQLite AND broadcast
+    this.alertsService.createAlert(payload);
+    return { status: 'success', message: 'Event persisted and broadcasted' };
   }
 }
