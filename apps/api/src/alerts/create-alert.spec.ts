@@ -5,8 +5,6 @@ import { RealtimeService } from '../realtime/realtime.service';
 
 describe('Function: createAlert (AlertsService)', () => {
   let service: AlertsService;
-  let prisma: PrismaService;
-  let realtime: RealtimeService;
 
   const mockPrismaService = {
     alert: { create: jest.fn() },
@@ -26,9 +24,6 @@ describe('Function: createAlert (AlertsService)', () => {
     }).compile();
 
     service = module.get<AlertsService>(AlertsService);
-    prisma = module.get<PrismaService>(PrismaService);
-    realtime = module.get<RealtimeService>(RealtimeService);
-
     jest.clearAllMocks();
   });
 
@@ -51,11 +46,11 @@ describe('Function: createAlert (AlertsService)', () => {
 
     const result = await service.createAlert({ sensor, status });
 
-    // Cast methods to jest.Mock to prevent unbound-method linting errors
-    expect(prisma.alert.create as jest.Mock).toHaveBeenCalledWith({
+    // Assert on the mock objects directly
+    expect(mockPrismaService.alert.create).toHaveBeenCalledWith({
       data: { message: expectedMessage, severity: expectedSeverity, acknowledged: false },
     });
-    expect(realtime.emit as jest.Mock).toHaveBeenCalledWith('DEVICE_TRIGGERED', result);
+    expect(mockRealtimeService.emit).toHaveBeenCalledWith('DEVICE_TRIGGERED', result);
     expect(result.id).toBe('manual-test-id');
   });
 });
