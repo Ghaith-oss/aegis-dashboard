@@ -48,10 +48,11 @@ describe('Function: createSystemAlert (AlertsService)', () => {
 
     const result = await service.createSystemAlert(message, severity as 'WARNING' | 'CRITICAL');
 
-    expect(prisma.alert.create).toHaveBeenCalledWith({
+    // Cast methods to jest.Mock to prevent unbound-method linting errors
+    expect(prisma.alert.create as jest.Mock).toHaveBeenCalledWith({
       data: { message, severity, acknowledged: false },
     });
-    expect(realtime.emit).toHaveBeenCalledWith('NEW_ALERT', result);
+    expect(realtime.emit as jest.Mock).toHaveBeenCalledWith('NEW_ALERT', result);
     expect(result.id).toBe('system-test-id');
   });
 });

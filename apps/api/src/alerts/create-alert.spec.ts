@@ -51,10 +51,11 @@ describe('Function: createAlert (AlertsService)', () => {
 
     const result = await service.createAlert({ sensor, status });
 
-    expect(prisma.alert.create).toHaveBeenCalledWith({
+    // Cast methods to jest.Mock to prevent unbound-method linting errors
+    expect(prisma.alert.create as jest.Mock).toHaveBeenCalledWith({
       data: { message: expectedMessage, severity: expectedSeverity, acknowledged: false },
     });
-    expect(realtime.emit).toHaveBeenCalledWith('DEVICE_TRIGGERED', result);
+    expect(realtime.emit as jest.Mock).toHaveBeenCalledWith('DEVICE_TRIGGERED', result);
     expect(result.id).toBe('manual-test-id');
   });
 });

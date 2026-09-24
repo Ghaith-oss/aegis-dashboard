@@ -14,7 +14,7 @@ describe('Function: canActivate (DeviceIngestGuard)', () => {
     guard = new DeviceIngestGuard(mockConfigService as ConfigService);
   });
 
-  const createMockContext = (authHeader: any): ExecutionContext => {
+  const createMockContext = (authHeader: string | null | undefined): ExecutionContext => {
     return {
       switchToHttp: () => ({
         getRequest: () => ({ headers: { authorization: authHeader }, ip: '127.0.0.1' }),

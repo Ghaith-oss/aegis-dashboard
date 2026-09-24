@@ -20,7 +20,7 @@ export class RealtimeController {
   @UseGuards(DeviceIngestGuard)
   simulateEvent(@Body() payload: SimulateEventDto) {
     // We now route it through the central hub to persist to SQLite AND broadcast
-    this.alertsService.createAlert(payload);
+    await this.alertsService.createAlert(payload);
     return { status: 'success', message: 'Event persisted and broadcasted' };
   }
 }

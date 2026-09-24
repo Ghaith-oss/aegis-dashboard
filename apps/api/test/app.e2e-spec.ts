@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
-
+import { Server } from 'http';
 describe('Aegis Realtime API Pipeline (e2e)', () => {
   let app: INestApplication;
 
@@ -22,7 +22,7 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
   describe('POST /api/realtime/simulate', () => {
     
     it('OWASP A01: Rejects missing authorization token', () => {
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as Server)
         .post('/api/realtime/simulate')
         .send({ sensor: 'Front Door', status: 'OPEN' })
         .expect(401); // Unauthorized
@@ -39,7 +39,7 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
     ];
 
     it.each(badPayloads)('OWASP A05: Rejects malformed payload: %j', (payload) => {
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as Server)
         .post('/api/realtime/simulate')
         .set('Authorization', 'aegis-secure-token-2026!')
         .send(payload)
@@ -47,7 +47,7 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
     });
 
     it('Accepts a fully valid request and token', () => {
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as Server)
         .post('/api/realtime/simulate')
         .set('Authorization', 'aegis-secure-token-2026!')
         .send({ sensor: 'Front Door', status: 'OPEN' })

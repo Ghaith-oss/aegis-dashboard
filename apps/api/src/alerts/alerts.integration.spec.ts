@@ -10,7 +10,7 @@ describe('AlertsService (Integration)', () => {
   let realtimeService: RealtimeService;
 
   beforeAll(async () => {
-    // 1. Point to a temporary database so we do not overwrite your real dashboard data
+    // 1. Point to a temporary database so we do not overwrite the real dashboard data
     process.env.DATABASE_URL = 'file:./integration-test.db';
 
     // 2. Automatically generate the tables in the temporary database
@@ -63,8 +63,9 @@ describe('AlertsService (Integration)', () => {
     const result = await alertsService.createAlert({ sensor: 'Fire Alarm', status: 'CRITICAL' });
 
     // Verify the AlertsService successfully handed the data over to the RealtimeService
-    expect(realtimeService.emit).toHaveBeenCalledTimes(1);
-    expect(realtimeService.emit).toHaveBeenCalledWith(
+    // Cast to jest.Mock to satisfy strict ESLint rules
+    expect(realtimeService.emit as jest.Mock).toHaveBeenCalledTimes(1);
+    expect(realtimeService.emit as jest.Mock).toHaveBeenCalledWith(
       'DEVICE_TRIGGERED', 
       expect.objectContaining({
         id: result.id,
