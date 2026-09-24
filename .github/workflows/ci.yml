@@ -42,6 +42,3 @@ jobs:
           npm run test
 
 
-      - name: test controller
-        run: |
-          Invoke-RestMethod -Uri http://localhost:3000/api/realtime/simulate -Method Post -Body '{"sensor": "Front Door", "status": "OPEN"}' -ContentType "application/json"
