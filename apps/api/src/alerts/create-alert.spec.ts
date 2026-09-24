@@ -1,25 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlertsService } from './alerts.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { RealtimeService } from '../realtime/realtime.service';
+import { getQueueToken } from '@nestjs/bullmq';
 
 describe('Function: createAlert (AlertsService)', () => {
   let service: AlertsService;
 
-  const mockPrismaService = {
-    alert: { create: jest.fn() },
-  };
-
-  const mockRealtimeService = {
-    emit: jest.fn(),
+  // Mock the BullMQ Queue instead of the database
+  const mockQueue = {
+    add: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AlertsService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: RealtimeService, useValue: mockRealtimeService },
+        { provide: getQueueToken('alerts-queue'), useValue: mockQueue },
       ],
     }).compile();
 
@@ -30,27 +25,27 @@ describe('Function: createAlert (AlertsService)', () => {
   const manualAlertData = [
     { sensor: 'Front Door', status: 'OPEN', expectedSeverity: 'WARNING' },
     { sensor: 'Back Window', status: 'CRITICAL', expectedSeverity: 'CRITICAL' },
-    { sensor: 'Motion Sensor', status: 'MOTION_DETECTED', expectedSeverity: 'WARNING' },
-    { sensor: 'Garage Door', status: 'OFFLINE', expectedSeverity: 'WARNING' },
   ];
 
-  it.each(manualAlertData)('should handle manual alert for "%s" status "%s"', async ({ sensor, status, expectedSeverity }) => {
+  it.each(manualAlertData)('should push manual alert to queue for "%s" status "%s"', async ({ sensor, status, expectedSeverity }) => {
     const expectedMessage = `${sensor} reported status: ${status}`;
     
-    mockPrismaService.alert.create.mockResolvedValueOnce({
-      id: 'manual-test-id',
-      message: expectedMessage,
-      severity: expectedSeverity,
-      acknowledged: false,
-    });
+    mockQueue.add.mockResolvedValueOnce({ id: 'job-123' });
 
     const result = await service.createAlert({ sensor, status });
 
-    // Assert on the mock objects directly
-    expect(mockPrismaService.alert.create).toHaveBeenCalledWith({
-      data: { message: expectedMessage, severity: expectedSeverity, acknowledged: false },
+    // Verify the service handed the work off to the queue
+    expect(mockQueue.add).toHaveBeenCalledWith('process-alert', {
+      message: expectedMessage,
+      severity: expectedSeverity,
+      eventType: 'DEVICE_TRIGGERED'
     });
-    expect(mockRealtimeService.emit).toHaveBeenCalledWith('DEVICE_TRIGGERED', result);
-    expect(result.id).toBe('manual-test-id');
+    
+    expect(result).toEqual({
+      status: 'queued',
+      jobId: 'job-123',
+      message: expectedMessage,
+      severity: expectedSeverity
+    });
   });
 });

@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AlertsService } from './alerts.service';
+import { AlertsProcessor } from './alerts.processor';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { execSync } from 'child_process';
 
-describe('AlertsService (Integration)', () => {
-  let alertsService: AlertsService;
+describe('AlertsProcessor (Integration)', () => {
+  let processor: AlertsProcessor;
   let prismaService: PrismaService;
 
-  // We declare the mock object outside so we can assert on it directly
   const mockRealtimeService = { emit: jest.fn() };
 
   beforeAll(async () => {
@@ -20,16 +19,16 @@ describe('AlertsService (Integration)', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AlertsService,
+        AlertsProcessor, // We now test the processor's DB integration
         PrismaService,
         {
           provide: RealtimeService,
-          useValue: mockRealtimeService, // Pass the constant here
+          useValue: mockRealtimeService,
         },
       ],
     }).compile();
 
-    alertsService = module.get<AlertsService>(AlertsService);
+    processor = module.get<AlertsProcessor>(AlertsProcessor);
     prismaService = module.get<PrismaService>(PrismaService);
   });
 
@@ -42,8 +41,17 @@ describe('AlertsService (Integration)', () => {
     await prismaService.$disconnect();
   });
 
-  it('Integration 1: Prisma DB Write Verification', async () => {
-    await alertsService.createAlert({ sensor: 'Back Door', status: 'OPEN' });
+  it('Integration 1: Processor successfully writes to Prisma DB', async () => {
+    const mockJob: any = {
+      id: 'int-job-1',
+      data: {
+        message: 'Back Door reported status: OPEN',
+        severity: 'WARNING',
+        eventType: 'DEVICE_TRIGGERED'
+      }
+    };
+
+    await processor.process(mockJob);
 
     const savedAlerts = await prismaService.alert.findMany();
 
@@ -53,10 +61,18 @@ describe('AlertsService (Integration)', () => {
     expect(savedAlerts[0].acknowledged).toBe(false);
   });
 
-  it('Integration 2: Service-to-Service Broadcasting', async () => {
-    const result = await alertsService.createAlert({ sensor: 'Fire Alarm', status: 'CRITICAL' });
+  it('Integration 2: Processor broadcasts to RealtimeService', async () => {
+    const mockJob: any = {
+      id: 'int-job-2',
+      data: {
+        message: 'Fire Alarm reported status: CRITICAL',
+        severity: 'CRITICAL',
+        eventType: 'DEVICE_TRIGGERED'
+      }
+    };
 
-    // Asserting on the plain mock object bypasses the unbound-method linting error
+    const result = await processor.process(mockJob);
+
     expect(mockRealtimeService.emit).toHaveBeenCalledTimes(1);
     expect(mockRealtimeService.emit).toHaveBeenCalledWith(
       'DEVICE_TRIGGERED', 

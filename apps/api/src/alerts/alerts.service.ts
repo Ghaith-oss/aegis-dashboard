@@ -1,47 +1,41 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { RealtimeService } from '../realtime/realtime.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
 
   constructor(
-    private prisma: PrismaService,
-    // We add forwardRef here to resolve the circular dependency with RealtimeModule
-    @Inject(forwardRef(() => RealtimeService))
-    private realtime: RealtimeService,
+    @InjectQueue('alerts-queue') private alertsQueue: Queue
   ) {}
 
   // FEATURE A: Used by the WeatherService
   async createSystemAlert(message: string, severity: 'WARNING' | 'CRITICAL') {
-    const alert = await this.prisma.alert.create({
-      data: {
-        message,
-        severity,
-        acknowledged: false,
-      },
+    // Instantly offload the work to BullMQ
+    const job = await this.alertsQueue.add('process-alert', { 
+      message, 
+      severity,
+      eventType: 'NEW_ALERT' 
     });
 
-    this.logger.log(`System Alert saved to DB: ${message}`);
-    this.realtime.emit('NEW_ALERT', alert);
-
-    return alert; // (Removed the accidental duplicate create call here)
+    this.logger.log(`System Alert queued (Job ID: ${job.id}): ${message}`);
+    return { status: 'queued', jobId: job.id, message, severity };
   }
 
   // FEATURE B: Used by the RealtimeController (/simulate endpoint)
   async createAlert(payload: { sensor: string; status: string }) {
-    const alert = await this.prisma.alert.create({
-      data: {
-        message: `${payload.sensor} reported status: ${payload.status}`,
-        severity: payload.status === 'CRITICAL' ? 'CRITICAL' : 'WARNING',
-        acknowledged: false,
-      },
+    const severity = payload.status === 'CRITICAL' ? 'CRITICAL' : 'WARNING';
+    const message = `${payload.sensor} reported status: ${payload.status}`;
+
+    // Instantly offload the work to BullMQ
+    const job = await this.alertsQueue.add('process-alert', { 
+      message, 
+      severity,
+      eventType: 'DEVICE_TRIGGERED' 
     });
 
-    this.logger.log(`Manual Alert saved to DB: ${alert.message}`);
-    this.realtime.emit('DEVICE_TRIGGERED', alert);
-
-    return alert;
+    this.logger.log(`Manual Alert queued (Job ID: ${job.id}): ${message}`);
+    return { status: 'queued', jobId: job.id, message, severity };
   }
 }

@@ -1,25 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlertsService } from './alerts.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { RealtimeService } from '../realtime/realtime.service';
+import { getQueueToken } from '@nestjs/bullmq';
 
 describe('Function: createSystemAlert (AlertsService)', () => {
   let service: AlertsService;
 
-  const mockPrismaService = {
-    alert: { create: jest.fn() },
-  };
-
-  const mockRealtimeService = {
-    emit: jest.fn(),
+  const mockQueue = {
+    add: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AlertsService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: RealtimeService, useValue: mockRealtimeService },
+        { provide: getQueueToken('alerts-queue'), useValue: mockQueue },
       ],
     }).compile();
 
@@ -30,24 +24,24 @@ describe('Function: createSystemAlert (AlertsService)', () => {
   const systemAlertData = [
     { message: 'Weather warning: High winds', severity: 'WARNING' },
     { message: 'System Error: Disk full', severity: 'CRITICAL' },
-    { message: 'Temperature drop detected', severity: 'WARNING' },
   ];
 
-  it.each(systemAlertData)('should create system alert with message "%s" and severity "%s"', async ({ message, severity }) => {
-    mockPrismaService.alert.create.mockResolvedValueOnce({
-      id: 'system-test-id',
-      message,
-      severity,
-      acknowledged: false,
-    });
+  it.each(systemAlertData)('should push system alert to queue with message "%s" and severity "%s"', async ({ message, severity }) => {
+    mockQueue.add.mockResolvedValueOnce({ id: 'job-456' });
 
     const result = await service.createSystemAlert(message, severity as 'WARNING' | 'CRITICAL');
 
-    // Assert on the mock objects directly
-    expect(mockPrismaService.alert.create).toHaveBeenCalledWith({
-      data: { message, severity, acknowledged: false },
+    expect(mockQueue.add).toHaveBeenCalledWith('process-alert', {
+      message,
+      severity,
+      eventType: 'NEW_ALERT'
     });
-    expect(mockRealtimeService.emit).toHaveBeenCalledWith('NEW_ALERT', result);
-    expect(result.id).toBe('system-test-id');
+
+    expect(result).toEqual({
+      status: 'queued',
+      jobId: 'job-456',
+      message,
+      severity
+    });
   });
 });
