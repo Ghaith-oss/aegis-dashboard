@@ -12,7 +12,7 @@ import { BullModule } from '@nestjs/bullmq';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
     }),
     ScheduleModule.forRoot(),
     BullModule.forRoot({

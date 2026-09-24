@@ -12,7 +12,7 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // We strictly apply the ValidationPipe here to mimic your main.ts setup.
     // Without this, the E2E test wouldn't trigger DTO defenses.
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
@@ -20,7 +20,6 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
   });
 
   describe('POST /api/realtime/simulate', () => {
-    
     it('OWASP A01: Rejects missing authorization token', () => {
       return request(app.getHttpServer() as Server)
         .post('/api/realtime/simulate')
@@ -38,13 +37,16 @@ describe('Aegis Realtime API Pipeline (e2e)', () => {
       {}, // empty payload
     ];
 
-    it.each(badPayloads)('OWASP A05: Rejects malformed payload: %j', (payload) => {
-      return request(app.getHttpServer() as Server)
-        .post('/api/realtime/simulate')
-        .set('Authorization', 'aegis-secure-token-2026!')
-        .send(payload)
-        .expect(400); // Bad Request
-    });
+    it.each(badPayloads)(
+      'OWASP A05: Rejects malformed payload: %j',
+      (payload) => {
+        return request(app.getHttpServer() as Server)
+          .post('/api/realtime/simulate')
+          .set('Authorization', 'aegis-secure-token-2026!')
+          .send(payload)
+          .expect(400); // Bad Request
+      },
+    );
 
     it('Accepts a fully valid request and token', () => {
       return request(app.getHttpServer() as Server)

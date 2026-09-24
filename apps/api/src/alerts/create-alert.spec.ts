@@ -27,25 +27,28 @@ describe('Function: createAlert (AlertsService)', () => {
     { sensor: 'Back Window', status: 'CRITICAL', expectedSeverity: 'CRITICAL' },
   ];
 
-  it.each(manualAlertData)('should push manual alert to queue for "%s" status "%s"', async ({ sensor, status, expectedSeverity }) => {
-    const expectedMessage = `${sensor} reported status: ${status}`;
-    
-    mockQueue.add.mockResolvedValueOnce({ id: 'job-123' });
+  it.each(manualAlertData)(
+    'should push manual alert to queue for "%s" status "%s"',
+    async ({ sensor, status, expectedSeverity }) => {
+      const expectedMessage = `${sensor} reported status: ${status}`;
 
-    const result = await service.createAlert({ sensor, status });
+      mockQueue.add.mockResolvedValueOnce({ id: 'job-123' });
 
-    // Verify the service handed the work off to the queue
-    expect(mockQueue.add).toHaveBeenCalledWith('process-alert', {
-      message: expectedMessage,
-      severity: expectedSeverity,
-      eventType: 'DEVICE_TRIGGERED'
-    });
-    
-    expect(result).toEqual({
-      status: 'queued',
-      jobId: 'job-123',
-      message: expectedMessage,
-      severity: expectedSeverity
-    });
-  });
+      const result = await service.createAlert({ sensor, status });
+
+      // Verify the service handed the work off to the queue
+      expect(mockQueue.add).toHaveBeenCalledWith('process-alert', {
+        message: expectedMessage,
+        severity: expectedSeverity,
+        eventType: 'DEVICE_TRIGGERED',
+      });
+
+      expect(result).toEqual({
+        status: 'queued',
+        jobId: 'job-123',
+        message: expectedMessage,
+        severity: expectedSeverity,
+      });
+    },
+  );
 });

@@ -8,7 +8,7 @@ import { RealtimeService } from './realtime.service';
 export class RealtimeController {
   constructor(
     private readonly alertsService: AlertsService,
-    private readonly realtimeService: RealtimeService
+    private readonly realtimeService: RealtimeService,
   ) {}
 
   @Sse('stream')

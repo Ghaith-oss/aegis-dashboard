@@ -14,10 +14,15 @@ describe('Function: canActivate (DeviceIngestGuard)', () => {
     guard = new DeviceIngestGuard(mockConfigService as ConfigService);
   });
 
-  const createMockContext = (authHeader: string | null | undefined): ExecutionContext => {
+  const createMockContext = (
+    authHeader: string | null | undefined,
+  ): ExecutionContext => {
     return {
       switchToHttp: () => ({
-        getRequest: () => ({ headers: { authorization: authHeader }, ip: '127.0.0.1' }),
+        getRequest: () => ({
+          headers: { authorization: authHeader },
+          ip: '127.0.0.1',
+        }),
       }),
     } as ExecutionContext;
   };
@@ -32,13 +37,16 @@ describe('Function: canActivate (DeviceIngestGuard)', () => {
     'wrong-token',
     'valid-test-token-extra',
     '123456789',
-    '<script>alert(1)</script>'
+    '<script>alert(1)</script>',
   ];
 
-  it.each(badTokens)('should throw UnauthorizedException when token is "%s"', (token) => {
-    const context = createMockContext(token);
-    expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
-  });
+  it.each(badTokens)(
+    'should throw UnauthorizedException when token is "%s"',
+    (token) => {
+      const context = createMockContext(token);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+    },
+  );
 
   it('should return true for the exact valid token', () => {
     const context = createMockContext('valid-test-token');

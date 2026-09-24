@@ -3,6 +3,13 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
+import { Alert } from '@prisma/client';
+
+export interface AlertJobData {
+  message: string;
+  severity: 'WARNING' | 'CRITICAL';
+  eventType: string;
+}
 
 @Processor('alerts-queue')
 export class AlertsProcessor extends WorkerHost {
@@ -15,7 +22,7 @@ export class AlertsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job<AlertJobData, Alert, string>): Promise<Alert> {
     const startTime = Date.now();
     const { message, severity, eventType } = job.data;
 
@@ -29,8 +36,10 @@ export class AlertsProcessor extends WorkerHost {
 
     // 3. Log the performance metric
     const executionTime = Date.now() - startTime;
-    this.logger.log(`Job ${job.id} processed in ${executionTime}ms. Payload: ${message}`);
-    
+    this.logger.log(
+      `Job ${job.id} processed in ${executionTime}ms. Payload: ${message}`,
+    );
+
     return alert;
   }
 }

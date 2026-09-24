@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AlertsProcessor } from './alerts.processor';
+import { AlertsProcessor, AlertJobData } from './alerts.processor';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
+import { Job } from 'bullmq';
+import { Alert } from '@prisma/client';
 
 describe('AlertsProcessor Unit Tests', () => {
   let processor: AlertsProcessor;
@@ -28,20 +30,21 @@ describe('AlertsProcessor Unit Tests', () => {
   });
 
   it('should process the job, write to DB, and emit realtime event', async () => {
-    const mockJob: any = {
+    const mockJob = {
       id: 'job-789',
       data: {
         message: 'Test message',
         severity: 'WARNING',
         eventType: 'DEVICE_TRIGGERED',
-      }
-    };
+      },
+    } as unknown as Job<AlertJobData, Alert, string>;
 
-    const mockCreatedAlert = {
+    const mockCreatedAlert: Alert = {
       id: 'alert-1',
       message: 'Test message',
       severity: 'WARNING',
       acknowledged: false,
+      createdAt: new Date(),
     };
 
     mockPrismaService.alert.create.mockResolvedValueOnce(mockCreatedAlert);
@@ -49,9 +52,16 @@ describe('AlertsProcessor Unit Tests', () => {
     const result = await processor.process(mockJob);
 
     expect(mockPrismaService.alert.create).toHaveBeenCalledWith({
-      data: { message: 'Test message', severity: 'WARNING', acknowledged: false }
+      data: {
+        message: 'Test message',
+        severity: 'WARNING',
+        acknowledged: false,
+      },
     });
-    expect(mockRealtimeService.emit).toHaveBeenCalledWith('DEVICE_TRIGGERED', mockCreatedAlert);
+    expect(mockRealtimeService.emit).toHaveBeenCalledWith(
+      'DEVICE_TRIGGERED',
+      mockCreatedAlert,
+    );
     expect(result).toEqual(mockCreatedAlert);
   });
 });
