@@ -1,19 +1,19 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
+import { AlertsController } from './alerts.controller';
 import { AlertsService } from './alerts.service';
 import { AlertsProcessor } from './alerts.processor';
-import { AlertsController } from './alerts.controller';
+import { BullModule } from '@nestjs/bullmq';
+import { PrismaModule } from '../prisma/prisma.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [
-    forwardRef(() => RealtimeModule),
-    BullModule.registerQueue({
-      name: 'alerts-queue',
-    }),
+    BullModule.registerQueue({ name: 'alerts-queue' }),
+    PrismaModule,
+    forwardRef(() => RealtimeModule) 
   ],
-  providers: [AlertsService, AlertsProcessor],
   controllers: [AlertsController],
+  providers: [AlertsService, AlertsProcessor],
   exports: [AlertsService],
 })
 export class AlertsModule {}

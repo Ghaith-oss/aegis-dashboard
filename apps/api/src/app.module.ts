@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BullModule } from '@nestjs/bullmq';
     WeatherModule,
     PrismaModule,
     AlertsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

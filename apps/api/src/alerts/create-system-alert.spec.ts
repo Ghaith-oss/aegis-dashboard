@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlertsService } from './alerts.service';
 import { getQueueToken } from '@nestjs/bullmq';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('Function: createSystemAlert (AlertsService)', () => {
   let service: AlertsService;
@@ -14,6 +15,7 @@ describe('Function: createSystemAlert (AlertsService)', () => {
       providers: [
         AlertsService,
         { provide: getQueueToken('alerts-queue'), useValue: mockQueue },
+        { provide: PrismaService, useValue: { findMany: jest.fn() } }
       ],
     }).compile();
 
