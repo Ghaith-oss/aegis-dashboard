@@ -50,3 +50,7 @@ jobs:
       - name: Run E2E Tests
         run: npm run test:e2e
         working-directory: ./apps/api
+        env:
+          DATABASE_URL: "file:./dev.db"
+          DEVICE_INGEST_TOKEN: "aegis-secure-token-2026!"
+          JWT_SECRET: "ci-test-secret-key
