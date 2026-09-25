@@ -46,3 +46,7 @@ jobs:
         run: |
           cd apps/api
           npm run test
+      
+      - name: Run E2E Tests
+        run: npm run test:e2e
+        working-directory: ./apps/api
