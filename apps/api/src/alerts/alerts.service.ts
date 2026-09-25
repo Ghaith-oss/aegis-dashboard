@@ -21,7 +21,7 @@ export class AlertsService {
   }
 
   // 2. Existing Write Method for Hardware Devices
-  async createAlert(payload: any) {
+  async createAlert(payload: { sensor: string; status: string }) {
     const { sensor, status } = payload;
     let severity = 'INFO';
     if (status === 'OPEN') severity = 'WARNING';
